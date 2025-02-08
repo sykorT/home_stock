@@ -47,14 +47,14 @@ CREATE TABLE barcodes (
 -- Fields:
 -- - id: Primary key, auto-incremented.
 -- - stock_id: Foreign key referencing the 'stocks' table, cascades on delete.
--- - barcode: Unique barcode referencing the 'barcodes' table, sets to NULL on delete.
+-- - barcode: Barcode referencing the 'barcodes' table, sets to NULL on delete.
 -- - quantity: Quantity of the item, defaults to 1.
 -- - expiration_date: Expiration date of the item.
 -- - created_at: Timestamp of when the item was created, defaults to the current time.
 CREATE TABLE items (
     id SERIAL PRIMARY KEY,
     stock_id INT REFERENCES stocks(id) ON DELETE CASCADE,
-    barcode TEXT UNIQUE REFERENCES barcodes(barcode) ON DELETE SET NULL,
+    barcode TEXT REFERENCES barcodes(barcode) ON DELETE SET NULL,
     quantity INT NOT NULL DEFAULT 1,
     expiration_date DATE,
     created_at TIMESTAMP DEFAULT NOW()
