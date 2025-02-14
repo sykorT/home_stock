@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:stock_scan_app/models/category.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../models/category.dart';
+import '../providers/category_provider.dart';
+import '../providers/auth_provider.dart';
 
 class CategorySettingsPage extends StatefulWidget {
-  final Function(List<Category>) onCategoriesUpdated;
-  final user = Supabase.instance.client.auth.currentUser;
   final List<Category> userCategories;
+  final Function(List<Category>) onCategoriesUpdated;
 
   CategorySettingsPage({Key? key, required this.userCategories, required this.onCategoriesUpdated}) : super(key: key);
 
@@ -13,46 +14,32 @@ class CategorySettingsPage extends StatefulWidget {
   _CategorySettingsPageState createState() => _CategorySettingsPageState();
 }
 
-
 class _CategorySettingsPageState extends State<CategorySettingsPage> {
   final TextEditingController _nameController = TextEditingController();
-  late List<Category> editedUserCategories;
+  late List<Category> _editableCategories;
 
   @override
   void initState() {
     super.initState();
-    editedUserCategories = List.from(widget.userCategories);
+    _editableCategories = List.from(widget.userCategories);
   }
 
-  // Function to add a new category
-  void _addUserCategory() async {
+  void _addCategory() async {
     if (_nameController.text.isNotEmpty) {
       try {
-        final categoryData = await Supabase.instance.client.from('categories').insert({
-          'user_id': widget.user!.id,
-          'name': _nameController.text,
-        }).select();
-
-        final newCategory = Category(
-          id: categoryData[0]['id'],
-          name: categoryData[0]['name'],
-        );
-
+        final newCategory = await Provider.of<CategoryProvider>(context, listen: false)
+            .addCategory(_nameController.text);
         setState(() {
-          editedUserCategories.add(newCategory);
+          _editableCategories.add(newCategory);
         });
-        widget.onCategoriesUpdated(List.from(editedUserCategories)); // Pass updated list to parent
+        widget.onCategoriesUpdated(List.from(_editableCategories));
         _nameController.clear();
       } catch (e) {
-        print('Error inserting category: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error inserting category: $e')),
-        );
+        _showErrorSnackBar('Error inserting category: $e');
       }
     }
   }
 
-  // Function to rename a category
   void _renameCategory(Category category) {
     _nameController.text = category.name;
     showDialog(
@@ -76,10 +63,9 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
                 setState(() {
                   category.name = _nameController.text;
                 });
-                await Supabase.instance.client.from('categories').update({
-                  'name': _nameController.text,
-                }).eq('id', category.id).eq('user_id', widget.user!.id);
-                widget.onCategoriesUpdated(List.from(editedUserCategories)); // Pass updated list to parent
+                await Provider.of<CategoryProvider>(context, listen: false)
+                    .updateCategoryName(category.id, _nameController.text);
+                widget.onCategoriesUpdated(List.from(_editableCategories));
                 Navigator.pop(context);
               },
               child: Text('Rename'),
@@ -90,8 +76,7 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
     );
   }
 
-  // Function to delete a category
-  void _deleteCategory(Category category) async {
+  void _deleteCategory(Category category) {
     showDialog(
       context: context,
       builder: (context) {
@@ -107,24 +92,13 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
             ),
             TextButton(
               onPressed: () async {
+                setState(() {
+                  _editableCategories.remove(category);
+                });
+                await Provider.of<CategoryProvider>(context, listen: false)
+                    .deleteCategory(category.id);
+                widget.onCategoriesUpdated(List.from(_editableCategories));
                 Navigator.pop(context);
-                try {
-                  await Supabase.instance.client
-                      .from('categories')
-                      .delete()
-                      .eq('id', category.id)
-                      .eq('user_id', widget.user!.id);
-
-                  setState(() {
-                    editedUserCategories.remove(category);
-                  });
-                  widget.onCategoriesUpdated(List.from(editedUserCategories)); // Pass updated list to parent
-                } catch (e) {
-                  print('Error deleting category: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error deleting category: $e')),
-                  );
-                }
               },
               child: Text('Delete'),
             ),
@@ -134,35 +108,40 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
     );
   }
 
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Category Settings'),
+        title: Text('Category Settings'),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(26.0, 16.0, 26.0, 16.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Category name',
                 suffixIcon: IconButton(
                   icon: Icon(Icons.add),
-                  onPressed: _addUserCategory,
+                  onPressed: _addCategory,
                 ),
               ),
             ),
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 26),
-              itemCount: editedUserCategories.length,
+              itemCount: _editableCategories.length,
               itemBuilder: (context, index) {
-                final category = editedUserCategories[index];
+                final category = _editableCategories[index];
                 return ListTile(
-                  title: Text(category.name, style: Theme.of(context).textTheme.bodyMedium,),
+                  title: Text(category.name, style: Theme.of(context).textTheme.bodyMedium),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:stock_scan_app/models/storage.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:stock_scan_app/services/supabase_service.dart';
 
 class StorageSettingsPage extends StatefulWidget {
   final List<Storage> storages;
   final Map<int, IconData> sampleIcons;
   final Function(List<Storage>) onStoragesUpdated;
-  final user = Supabase.instance.client.auth.currentUser;
 
   StorageSettingsPage({Key? key, required this.storages, required this.sampleIcons, required this.onStoragesUpdated}) : super(key: key);
 
@@ -17,6 +16,7 @@ class StorageSettingsPage extends StatefulWidget {
 class _StorageSettingsPageState extends State<StorageSettingsPage> {
   final TextEditingController _nameController = TextEditingController();
   late List<Storage> _editableStorages;
+  final SupabaseService _supabaseService = SupabaseService();
 
   @override
   void initState() {
@@ -24,23 +24,11 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
     _editableStorages = List.from(widget.storages); // Create a mutable copy
   }
 
-
   // Function to add a new storage
   void _addStorage() async {
     if (_nameController.text.isNotEmpty) {
       try {
-        final storageData = await Supabase.instance.client.from('storages').insert({
-          'user_id': widget.user!.id,
-          'name': _nameController.text,
-          'icon_id': 1, // Default icon ID
-        }).select();
-
-        final newStorage = Storage(
-          id: storageData[0]['id'],
-          name: storageData[0]['name'],
-          iconId: storageData[0]['icon_id'],
-        );
-
+        final newStorage = await _supabaseService.addStorage(_nameController.text);
         setState(() {
           _editableStorages.add(newStorage);
         });
@@ -72,9 +60,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                     setState(() {
                       storage.iconId = entry.key;
                     });
-                    await Supabase.instance.client.from('storages').update({
-                      'icon_id': entry.key,
-                    }).eq('id', storage.id).eq('user_id', widget.user!.id);
+                    await _supabaseService.updateStorageIcon(storage.id, entry.key);
                     widget.onStoragesUpdated(_editableStorages);
                     Navigator.pop(context);
                   },
@@ -111,9 +97,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                 setState(() {
                   storage.name = _nameController.text;
                 });
-                await Supabase.instance.client.from('storages').update({
-                  'name': _nameController.text,
-                }).eq('id', storage.id).eq('user_id', widget.user!.id);
+                await _supabaseService.updateStorageName(storage.id, _nameController.text);
                 widget.onStoragesUpdated(_editableStorages);
                 Navigator.pop(context);
               },
@@ -145,7 +129,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                 setState(() {
                   _editableStorages.remove(storage);
                 });
-                await Supabase.instance.client.from('storages').delete().eq('id', storage.id).eq('user_id', widget.user!.id);
+                await _supabaseService.deleteStorage(storage.id);
                 widget.onStoragesUpdated(List.from(_editableStorages));
                 Navigator.pop(context);
               },
@@ -185,10 +169,10 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                 final storage = _editableStorages[index];
                 return ListTile(
                   leading: Icon(widget.sampleIcons[storage.iconId] ?? Icons.storage),
-                    title: Text(
+                  title: Text(
                     storage.name,
                     style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
