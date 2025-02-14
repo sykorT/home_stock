@@ -92,11 +92,12 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
             ),
             TextButton(
               onPressed: () async {
-                setState(() {
+                bool removed = await Provider.of<CategoryProvider>(context, listen: false)
+                    .deleteCategory(category.id);
+                if (removed) {setState(() {
                   _editableCategories.remove(category);
                 });
-                await Provider.of<CategoryProvider>(context, listen: false)
-                    .deleteCategory(category.id);
+                }
                 widget.onCategoriesUpdated(List.from(_editableCategories));
                 Navigator.pop(context);
               },

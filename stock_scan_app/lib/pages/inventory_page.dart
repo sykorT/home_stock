@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/storage_provider.dart';
 import '../providers/category_provider.dart';
 import '../models/storage.dart';
@@ -16,10 +17,29 @@ class _InventoryPageState extends State<InventoryPage> {
   String selectedCategory = 'All';
   bool showNames = false;
 
+    @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+  
   @override
   void dispose() {
     selectedCategory = 'All';
     super.dispose();
+  }
+
+  void _initializeData() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user != null) {
+      final userId = user.id;
+      final storageProvider = Provider.of<StorageProvider>(context, listen: false);
+      final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+
+      storageProvider.fetchStorages(userId);
+      categoryProvider.fetchAllCategories();
+      categoryProvider.fetchUserCategories(userId);
+    }
   }
 
   @override
@@ -92,7 +112,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     } else {
                       final storage = storages[index - 1];
                       return ListTile(
-                        leading: Icon(Icons.storage),
+                        leading: Icon(Provider.of<StorageProvider>(context, listen: false).homeStorageIcons[storage.iconId]),
                         iconColor: Theme.of(context).primaryColor,
                         title: showNames ? Text(storage.name, style: Theme.of(context).textTheme.bodyMedium) : null,
                         onTap: () {
@@ -130,7 +150,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   .where((storage) => storage.items.any((storageItem) => storageItem.productName == item.productName))
                                   .map((storage) => Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                                        child: Icon(Icons.storage, size: 16),
+                                        child: Icon(Provider.of<StorageProvider>(context, listen: false).homeStorageIcons[storage.iconId], size: 16),
                                       ))
                                   .toList(),
                             ),

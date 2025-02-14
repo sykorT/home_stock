@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stock_scan_app/pages/scan_page.dart';
 import '../providers/auth_provider.dart';
 import '../providers/storage_provider.dart';
 import '../providers/category_provider.dart';
 import 'auth_page.dart';
 import 'inventory_page.dart';
-//import 'scan_page.dart';
 import 'storage_settings_page.dart';
 import 'category_settings_page.dart';
 
@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: 'Scan'),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.teal,
+        selectedItemColor: Colors.teal[800],
         onTap: _onItemTapped,
       ),
     );
@@ -78,12 +78,13 @@ class _HomePageState extends State<HomePage> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      if (index == 0) _initializeData();
     });
   }
 
   List<Widget> _screens() => [
         InventoryPage(),
-        //ScanPage(),
+        ScanPage(),
       ];
 
   Future<dynamic> showSettingsMenu(BuildContext context) {
@@ -102,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(
                   builder: (context) => StorageSettingsPage(
                     storages: Provider.of<StorageProvider>(context, listen: false).storages,
-                    sampleIcons: {}, // Pass your sample icons here
+                    sampleIcons: Provider.of<StorageProvider>(context, listen: false).homeStorageIcons,
                     onStoragesUpdated: (updatedStorages) {
                       Provider.of<StorageProvider>(context, listen: false).fetchStorages(
                         Provider.of<AuthProvider>(context, listen: false).user!.id,

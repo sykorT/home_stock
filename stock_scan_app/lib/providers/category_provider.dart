@@ -37,9 +37,16 @@ class CategoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deleteCategory(String categoryId) async {
-    await _supabaseService.deleteCategory(categoryId);
-    _userCategories.removeWhere((category) => category.id == categoryId);
-    notifyListeners();
+  Future<bool> deleteCategory(String categoryId) async {
+    try {
+      await _supabaseService.deleteCategory(categoryId);
+      _userCategories.removeWhere((category) => category.id == categoryId);
+      notifyListeners();    
+      return true ;
+    } catch (e) {
+      print('Error deleting category: $e');
+      return false;
+    }
+
   }
 }

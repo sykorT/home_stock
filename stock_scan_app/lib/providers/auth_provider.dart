@@ -4,9 +4,16 @@ import '../services/supabase_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
+  late final Session? _session;  
   User? _user;
 
+  AuthProvider() {
+    _session = Supabase.instance.client.auth.currentSession;
+    _user = Supabase.instance.client.auth.currentUser;
+  }
+
   User? get user => _user;
+  Session? get session => _session;
 
   Future<void> signIn(String email, String password) async {
     await _supabaseService.signIn(email, password);

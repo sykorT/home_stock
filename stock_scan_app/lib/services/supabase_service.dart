@@ -3,6 +3,11 @@ import '../models/storage.dart';
 
 class SupabaseService {
   final supabase = Supabase.instance.client;
+  late final String userId;
+
+  SupabaseService() {
+    userId = supabase.auth.currentUser!.id;
+  }
 
   Future<List<dynamic>> fetchStorages(String userId) async {
     return await supabase.from('storages').select().eq('user_id', userId);
@@ -83,12 +88,51 @@ class SupabaseService {
   }
 
   Future<void> updateCategoryName(String categoryId, String newName) async {
-    await Supabase.instance.client.from('categories').update({
+    await supabase.from('categories').update({
       'name': newName,
     }).eq('id', categoryId);
   }
 
   Future<void> deleteCategory(String categoryId) async {
-    await Supabase.instance.client.from('categories').delete().eq('id', categoryId);
+    await supabase.from('categories').delete().eq('id', categoryId).eq('user_id', supabase.auth.currentUser!.id);
+  }
+
+Future<List<dynamic>>  fetchBarcodeData(String barcode) async {
+    final response = await supabase.rpc('get_all_barcodes', params: {
+      'user_uuid': userId,
+      'barcode_selected': barcode
+    });
+    return response;
+  }
+
+  Future<List<dynamic>> addBarcodeToDatabase(String barcode) async {
+    final category = await supabase.from('categories').select('id').eq('name', 'none').single();
+    final newBarcode = await supabase.from('barcodes').insert({'barcode': barcode, 'category_id': category['id'] }).select();
+    addBarcodeToUserDatabase(newBarcode[0]);
+    return newBarcode;
+  }
+
+  Future<void> addBarcodeToUserDatabase(Map<String, dynamic> newBarcode) async {
+    await supabase.from('user_barcodes').insert({'id': newBarcode['id'], 'user_id': userId, 'barcode': newBarcode['barcode'] },  ).select();
+  }
+
+
+  Future<void> updateUserBarcode(Map<String, dynamic> barcodeData) async {
+    await supabase.from('user_barcodes').upsert(barcodeData);
+  }
+
+  Future<List<dynamic>> fetchItemStorageData(String barcodeId) async {
+    return await supabase.rpc('get_item_storage_counts', params: {
+      'user_uuid': userId,
+      'barcode_selected': barcodeId
+    });
+  }
+
+  Future<void> removeItem(String barcodeId, String storageId) async {
+    await supabase.from('items').delete().eq('barcode_id', barcodeId).eq('storage_id', storageId);
+  }
+
+  Future<void> upsertItem(Map<String, dynamic> itemData) async {
+    await supabase.from('items').upsert(itemData);
   }
 }
