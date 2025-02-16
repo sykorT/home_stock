@@ -6,8 +6,10 @@ import '../services/supabase_service.dart';
 class StorageProvider with ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
   List<Storage> _storages = [];
+  String? selectedStorage;
 
   List<Storage> get storages => _storages;
+  String? get storage => selectedStorage;
 
   final Map<int, IconData> homeStorageIcons = {
     1: Icons.kitchen,
@@ -55,6 +57,64 @@ class StorageProvider with ChangeNotifier {
     }
 
     _storages = storages;
+    if (_storages.isNotEmpty) {
+      selectedStorage = _storages[0].name;
+    }
     notifyListeners();
   }
+
+  Future<Storage> addStorage(String name) async {
+    final storageData = await _supabaseService.addStorage(name);
+
+    final newStorage = Storage(
+      id: storageData.id,
+      name: storageData.name,
+      iconId: storageData.iconId,
+    );
+
+    _storages.add(newStorage);
+    notifyListeners();
+    return newStorage;
+  }
+
+  Future<bool> deleteStorage(String storageId) async {
+    try {
+      await _supabaseService.deleteStorage(storageId);
+      _storages.removeWhere((storage) => storage.id == storageId);
+      if (_storages.isNotEmpty) {
+        selectedStorage = _storages[0].name;
+      } else {
+        selectedStorage = null;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('Error deleting storage: $e');
+      return false;
+    }
+  }
+
+  Future<void> updateStorageName(String storageId, String newName) async {
+    await _supabaseService.updateStorageName(storageId, newName);
+    final storage = _storages.firstWhere((storage) => storage.id == storageId);
+    if (storage.name == selectedStorage) {
+      selectedStorage = newName;
+    }    
+    storage.name = newName;
+    notifyListeners();
+  }
+
+  Future<void> updateStorageIcon(String storageId, int newIconId) async {
+    await _supabaseService.updateStorageIcon(storageId, newIconId);
+    final storage = _storages.firstWhere((storage) => storage.id == storageId);
+    storage.iconId = newIconId;
+    notifyListeners();
+  }
+
+  void setSelectedStorage(String? newValue) {
+    selectedStorage = newValue;
+    notifyListeners();
+  }
+
+
 }

@@ -4,10 +4,8 @@ import '../models/category.dart';
 import '../providers/category_provider.dart';
 
 class CategorySettingsPage extends StatefulWidget {
-  final List<Category> userCategories;
-  final Function(List<Category>) onCategoriesUpdated;
 
-  CategorySettingsPage({Key? key, required this.userCategories, required this.onCategoriesUpdated}) : super(key: key);
+  CategorySettingsPage({Key? key}) : super(key: key);
 
   @override
   _CategorySettingsPageState createState() => _CategorySettingsPageState();
@@ -15,23 +13,16 @@ class CategorySettingsPage extends StatefulWidget {
 
 class _CategorySettingsPageState extends State<CategorySettingsPage> {
   final TextEditingController _nameController = TextEditingController();
-  late List<Category> _editableCategories;
 
   @override
   void initState() {
     super.initState();
-    _editableCategories = List.from(widget.userCategories);
   }
 
-  void _addCategory() async {
+  void _addCategory(CategoryProvider categoryProvider) async {
     if (_nameController.text.isNotEmpty) {
       try {
-        final newCategory = await Provider.of<CategoryProvider>(context, listen: false)
-            .addCategory(_nameController.text);
-        setState(() {
-          _editableCategories.add(newCategory);
-        });
-        widget.onCategoriesUpdated(List.from(_editableCategories));
+        await categoryProvider.addCategory(_nameController.text);
         _nameController.clear();
       } catch (e) {
         _showErrorSnackBar('Error inserting category: $e');
@@ -39,7 +30,7 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
     }
   }
 
-  void _renameCategory(Category category) {
+  void _renameCategory(Category category, CategoryProvider categoryProvider) {
     _nameController.text = category.name;
     showDialog(
       context: context,
@@ -59,12 +50,7 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
             ),
             TextButton(
               onPressed: () async {
-                setState(() {
-                  category.name = _nameController.text;
-                });
-                await Provider.of<CategoryProvider>(context, listen: false)
-                    .updateCategoryName(category.id, _nameController.text);
-                widget.onCategoriesUpdated(List.from(_editableCategories));
+                await categoryProvider.updateCategoryName(category.id, _nameController.text);
                 Navigator.pop(context);
               },
               child: Text('Rename'),
@@ -75,7 +61,7 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
     );
   }
 
-  void _deleteCategory(Category category) {
+  void _deleteCategory(Category category, CategoryProvider categoryProvider) {
     showDialog(
       context: context,
       builder: (context) {
@@ -91,13 +77,10 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
             ),
             TextButton(
               onPressed: () async {
-                bool removed = await Provider.of<CategoryProvider>(context, listen: false)
-                    .deleteCategory(category.id);
-                if (removed) {setState(() {
-                  _editableCategories.remove(category);
-                });
+                bool removed = await categoryProvider.deleteCategory(category.id);
+                if (!removed) {
+                  _showErrorSnackBar('Error deleting category');
                 }
-                widget.onCategoriesUpdated(List.from(_editableCategories));
                 Navigator.pop(context);
               },
               child: Text('Delete'),
@@ -116,6 +99,8 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryProvider = context.watch<CategoryProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Category Settings'),
@@ -130,16 +115,16 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
                 labelText: 'Category name',
                 suffixIcon: IconButton(
                   icon: Icon(Icons.add),
-                  onPressed: _addCategory,
+                  onPressed: () {_addCategory(categoryProvider);},
                 ),
               ),
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: _editableCategories.length,
+              itemCount: categoryProvider.userCategories.length,
               itemBuilder: (context, index) {
-                final category = _editableCategories[index];
+                final category = categoryProvider.userCategories[index];
                 return ListTile(
                   title: Text(category.name, style: Theme.of(context).textTheme.bodyMedium),
                   trailing: Row(
@@ -148,13 +133,13 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
                       IconButton(
                         icon: Icon(Icons.drive_file_rename_outline),
                         onPressed: () {
-                          _renameCategory(category);
+                          _renameCategory(category, categoryProvider);
                         },
                       ),
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () {
-                          _deleteCategory(category);
+                          _deleteCategory(category, categoryProvider);
                         },
                       ),
                     ],

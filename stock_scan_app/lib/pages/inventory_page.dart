@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/storage_provider.dart';
 import '../providers/category_provider.dart';
 import '../models/storage.dart';
@@ -20,7 +19,6 @@ class _InventoryPageState extends State<InventoryPage> {
     @override
   void initState() {
     super.initState();
-    _initializeData();
   }
   
   @override
@@ -28,24 +26,12 @@ class _InventoryPageState extends State<InventoryPage> {
     selectedCategory = 'All';
     super.dispose();
   }
-
-  void _initializeData() {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      final userId = user.id;
-      final storageProvider = Provider.of<StorageProvider>(context, listen: false);
-      final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
-
-      storageProvider.fetchStorages(userId);
-      categoryProvider.fetchAllCategories();
-      categoryProvider.fetchUserCategories(userId);
-    }
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
-    final storages = Provider.of<StorageProvider>(context).storages;
-    final categories = Provider.of<CategoryProvider>(context).allCategories;
+    final categories = context.watch<CategoryProvider>().allCategories;
+    final storages = context.watch<StorageProvider>().storages;
+    final storageIcons = context.watch<StorageProvider>().homeStorageIcons;
 
     return Column(
       children: [
@@ -112,7 +98,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     } else {
                       final storage = storages[index - 1];
                       return ListTile(
-                        leading: Icon(Provider.of<StorageProvider>(context, listen: false).homeStorageIcons[storage.iconId]),
+                        leading: Icon(storageIcons[storage.iconId]),
                         iconColor: Theme.of(context).primaryColor,
                         title: showNames ? Text(storage.name, style: Theme.of(context).textTheme.bodyMedium) : null,
                         onTap: () {
@@ -150,7 +136,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   .where((storage) => storage.items.any((storageItem) => storageItem.productName == item.productName))
                                   .map((storage) => Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                                        child: Icon(Provider.of<StorageProvider>(context, listen: false).homeStorageIcons[storage.iconId], size: 16),
+                                        child: Icon(storageIcons[storage.iconId], size: 16),
                                       ))
                                   .toList(),
                             ),

@@ -6,9 +6,11 @@ class CategoryProvider with ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
   List<Category> _allCategories = [];
   List<Category> _userCategories = [];
+  String? itemSelectedCategory = 'none';
 
   List<Category> get allCategories => _allCategories;
   List<Category> get userCategories => _userCategories;
+  String? get scanSelectedCategory => itemSelectedCategory;
 
   Future<void> fetchAllCategories() async {
     final response = await _supabaseService.fetchAllCategories();
@@ -26,13 +28,19 @@ class CategoryProvider with ChangeNotifier {
     final response = await _supabaseService.addCategory(name);
     final newCategory = Category.fromMap(response);
     _userCategories.add(newCategory);
+    _allCategories.add(newCategory);
     notifyListeners();
     return newCategory;
   }
 
   Future<void> updateCategoryName(String categoryId, String newName) async {
     await _supabaseService.updateCategoryName(categoryId, newName);
-    final category = _userCategories.firstWhere((category) => category.id == categoryId);
+    var userCategory = _userCategories.firstWhere((category) => category.id == categoryId);
+    var category = _allCategories.firstWhere((category) => category.id == categoryId);
+    if (userCategory.name == itemSelectedCategory) {
+      itemSelectedCategory = newName;
+    }  
+    userCategory.name = newName;
     category.name = newName;
     notifyListeners();
   }
@@ -40,7 +48,12 @@ class CategoryProvider with ChangeNotifier {
   Future<bool> deleteCategory(String categoryId) async {
     try {
       await _supabaseService.deleteCategory(categoryId);
+      var userCategory = _userCategories.firstWhere((category) => category.id == categoryId);
+      if (userCategory.name == itemSelectedCategory) {
+        itemSelectedCategory = 'none';
+      }
       _userCategories.removeWhere((category) => category.id == categoryId);
+      _allCategories.removeWhere((category) => category.id == categoryId);
       notifyListeners();    
       return true ;
     } catch (e) {
@@ -48,5 +61,10 @@ class CategoryProvider with ChangeNotifier {
       return false;
     }
 
+  }
+
+  void setLoadedCategory(String? newValue) {
+    itemSelectedCategory = newValue;
+    notifyListeners();
   }
 }

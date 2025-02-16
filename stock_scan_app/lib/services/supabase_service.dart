@@ -135,4 +135,8 @@ Future<List<dynamic>>  fetchBarcodeData(String barcode) async {
   Future<void> upsertItem(Map<String, dynamic> itemData) async {
     await supabase.from('items').upsert(itemData);
   }
+
+  Future<List<dynamic>> insertItem(Map<String, dynamic> itemData) async {
+    return await supabase.from('items').insert(itemData).select();
+  }
 }

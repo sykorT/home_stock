@@ -47,6 +47,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Home Storages'),
@@ -102,15 +103,7 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => StorageSettingsPage(
-                    storages: Provider.of<StorageProvider>(context, listen: false).storages,
-                    sampleIcons: Provider.of<StorageProvider>(context, listen: false).homeStorageIcons,
-                    onStoragesUpdated: (updatedStorages) {
-                      Provider.of<StorageProvider>(context, listen: false).fetchStorages(
-                        user!.id,
-                      );
-                    },
-                  ),
+                  builder: (context) => StorageSettingsPage(),
                 ),
               );
             },
@@ -125,15 +118,7 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CategorySettingsPage(
-                    userCategories: Provider.of<CategoryProvider>(context, listen: false).userCategories,
-                    onCategoriesUpdated: (updatedCategories) {
-                      Provider.of<CategoryProvider>(context, listen: false).fetchUserCategories(
-                        user!.id,
-                      );
-                      Provider.of<CategoryProvider>(context, listen: false).fetchAllCategories();
-                    },
-                  ),
+                  builder: (context) => CategorySettingsPage(),
                 ),
               );
             },

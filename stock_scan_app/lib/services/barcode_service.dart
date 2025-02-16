@@ -44,6 +44,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             final String? barcodeValue = barcodes.first.rawValue;
             print('Scanned Barcode: $barcodeValue'); 
               Navigator.pop(context, barcodeValue);
+              //Navigator.popUntil(context, ModalRoute.withName("YOUR_HOMEPAGE_ROUTE"));
           }
         },
       ),

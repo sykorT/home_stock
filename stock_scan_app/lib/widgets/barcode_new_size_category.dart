@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:stock_scan_app/models/category.dart';
+import 'package:stock_scan_app/providers/category_provider.dart';
 
 class BarcodeNewSizeCategory extends StatelessWidget {
   final TextEditingController packageController;
-  final List<Category> categories;
-  final String newBarcodeCategory;
   final ValueChanged<String?> onCategoryChanged;
-  final String loadedCategory;
 
   BarcodeNewSizeCategory({
     required this.packageController,
-    required this.categories,
-    required this.newBarcodeCategory,
     required this.onCategoryChanged,
-    required this.loadedCategory,
   });
 
   @override
   Widget build(BuildContext context) {
+    final categories = context.watch<CategoryProvider>().allCategories;
+    final selectedCategory = context.watch<CategoryProvider>().scanSelectedCategory;
+
     return Row(
       children: [
         Expanded(
@@ -42,7 +41,7 @@ class BarcodeNewSizeCategory extends StatelessWidget {
         Expanded(
           child: DropdownButtonFormField<String>(
             isExpanded: true,
-            value: newBarcodeCategory.isNotEmpty ? newBarcodeCategory : loadedCategory,
+            value: selectedCategory,
             decoration: InputDecoration(
               labelText: 'Category',
               border: InputBorder.none,

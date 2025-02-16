@@ -20,10 +20,6 @@ class _AuthPageState extends State<AuthPage> {
       final password = _passwordController.text;
 
       await _supabaseService.signIn(email, password);
-      /*Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );*/
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),

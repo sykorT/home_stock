@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:stock_scan_app/models/storage.dart';
-import 'package:stock_scan_app/services/supabase_service.dart';
+import 'package:stock_scan_app/providers/storage_provider.dart';
 
 class StorageSettingsPage extends StatefulWidget {
-  final List<Storage> storages;
-  final Map<int, IconData> sampleIcons;
-  final Function(List<Storage>) onStoragesUpdated;
 
-  StorageSettingsPage({Key? key, required this.storages, required this.sampleIcons, required this.onStoragesUpdated}) : super(key: key);
+  StorageSettingsPage({Key? key}) : super(key: key);
 
   @override
   _StorageSettingsPageState createState() => _StorageSettingsPageState();
@@ -15,36 +13,28 @@ class StorageSettingsPage extends StatefulWidget {
 
 class _StorageSettingsPageState extends State<StorageSettingsPage> {
   final TextEditingController _nameController = TextEditingController();
-  late List<Storage> _editableStorages;
-  final SupabaseService _supabaseService = SupabaseService();
 
   @override
   void initState() {
     super.initState();
-    _editableStorages = List.from(widget.storages); // Create a mutable copy
   }
 
   // Function to add a new storage
-  void _addStorage() async {
+  
+  void _addStorage(StorageProvider storageProvider) async {
     if (_nameController.text.isNotEmpty) {
       try {
-        final newStorage = await _supabaseService.addStorage(_nameController.text);
-        setState(() {
-          _editableStorages.add(newStorage);
-        });
-        widget.onStoragesUpdated(List.from(_editableStorages)); // Pass updated list to parent
+        await storageProvider.addStorage(_nameController.text);
         _nameController.clear();
       } catch (e) {
-        print('Error inserting storage: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error inserting storage: $e')),
-        );
+        _showErrorSnackBar('Error inserting category: $e');
       }
     }
   }
 
+
   // Function to select an icon for a storage
-  void _selectIcon(Storage storage, Map<int, IconData> sampleIcons) {
+  void _selectIcon(Storage storage, StorageProvider storageProvider) {
     showDialog(
       context: context,
       builder: (context) {
@@ -53,15 +43,14 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
           content: SingleChildScrollView(
             child: Wrap(
               spacing: 10,
-              children: sampleIcons.entries.map((entry) {
+              children: storageProvider.homeStorageIcons.entries.map((entry) {
                 return IconButton(
                   icon: Icon(entry.value),
                   onPressed: () async {
                     setState(() {
                       storage.iconId = entry.key;
                     });
-                    await _supabaseService.updateStorageIcon(storage.id, entry.key);
-                    widget.onStoragesUpdated(_editableStorages);
+                    await storageProvider.updateStorageIcon(storage.id, entry.key);
                     Navigator.pop(context);
                   },
                 );
@@ -74,7 +63,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
   }
 
   // Function to rename a storage
-  void _renameStorage(Storage storage) {
+  void _renameStorage(Storage storage, StorageProvider storageProvider) {
     _nameController.text = storage.name;
     showDialog(
       context: context,
@@ -94,11 +83,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
             ),
             TextButton(
               onPressed: () async {
-                setState(() {
-                  storage.name = _nameController.text;
-                });
-                await _supabaseService.updateStorageName(storage.id, _nameController.text);
-                widget.onStoragesUpdated(_editableStorages);
+                await storageProvider.updateStorageName(storage.id, _nameController.text);
                 Navigator.pop(context);
               },
               child: Text('Rename'),
@@ -110,7 +95,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
   }
 
   // Function to delete a storage
-  void _deleteStorage(Storage storage) {
+  void _deleteStorage(Storage storage, StorageProvider storageProvider) {
     showDialog(
       context: context,
       builder: (context) {
@@ -126,11 +111,10 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
             ),
             TextButton(
               onPressed: () async {
-                setState(() {
-                  _editableStorages.remove(storage);
-                });
-                await _supabaseService.deleteStorage(storage.id);
-                widget.onStoragesUpdated(List.from(_editableStorages));
+                bool removed = await storageProvider.deleteStorage(storage.id);
+                if (!removed) {
+                  _showErrorSnackBar('Error deleting category');
+                }
                 Navigator.pop(context);
               },
               child: Text('Delete'),
@@ -141,8 +125,16 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
     );
   }
 
+    void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final storageProvider = context.watch<StorageProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Storage Settings'),
@@ -157,18 +149,20 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                 labelText: 'Storage name',
                 suffixIcon: IconButton(
                   icon: Icon(Icons.add),
-                  onPressed: _addStorage,
+                  onPressed: () {
+                    _addStorage(storageProvider);
+                  },
                 ),
               ),
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: _editableStorages.length,
+              itemCount: storageProvider.storages.length,
               itemBuilder: (context, index) {
-                final storage = _editableStorages[index];
+                final storage = storageProvider.storages[index];
                 return ListTile(
-                  leading: Icon(widget.sampleIcons[storage.iconId] ?? Icons.storage),
+                  leading: Icon(storageProvider.homeStorageIcons[storage.iconId] ?? Icons.storage),
                   title: Text(
                     storage.name,
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -179,19 +173,19 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
-                          _selectIcon(storage, widget.sampleIcons);
+                          _selectIcon(storage, storageProvider);
                         },
                       ),
                       IconButton(
                         icon: Icon(Icons.drive_file_rename_outline),
                         onPressed: () {
-                          _renameStorage(storage);
+                          _renameStorage(storage, storageProvider);
                         },
                       ),
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () {
-                          _deleteStorage(storage);
+                          _deleteStorage(storage, storageProvider);
                         },
                       ),
                     ],
