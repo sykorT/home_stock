@@ -3,10 +3,10 @@ import '../models/storage.dart';
 
 class SupabaseService {
   final supabase = Supabase.instance.client;
-  late final String userId;
+  late final user;
 
   SupabaseService() {
-    userId = supabase.auth.currentUser!.id;
+    user = supabase.auth.currentUser;
   }
 
   Future<List<dynamic>> fetchStorages(String userId) async {
@@ -99,7 +99,7 @@ class SupabaseService {
 
 Future<List<dynamic>>  fetchBarcodeData(String barcode) async {
     final response = await supabase.rpc('get_all_barcodes', params: {
-      'user_uuid': userId,
+      'user_uuid': user.id,
       'barcode_selected': barcode
     });
     return response;
@@ -113,7 +113,7 @@ Future<List<dynamic>>  fetchBarcodeData(String barcode) async {
   }
 
   Future<void> addBarcodeToUserDatabase(Map<String, dynamic> newBarcode) async {
-    await supabase.from('user_barcodes').insert({'id': newBarcode['id'], 'user_id': userId, 'barcode': newBarcode['barcode'] },  ).select();
+    await supabase.from('user_barcodes').insert({'id': newBarcode['id'], 'user_id': user.id, 'barcode': newBarcode['barcode'] },  ).select();
   }
 
 
@@ -123,7 +123,7 @@ Future<List<dynamic>>  fetchBarcodeData(String barcode) async {
 
   Future<List<dynamic>> fetchItemStorageData(String barcodeId) async {
     return await supabase.rpc('get_item_storage_counts', params: {
-      'user_uuid': userId,
+      'user_uuid': user.id,
       'barcode_selected': barcodeId
     });
   }

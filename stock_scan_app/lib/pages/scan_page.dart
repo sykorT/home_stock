@@ -221,7 +221,7 @@ class _ScanPageState extends State<ScanPage> {
     return _nameController.text != _loadedBarcodeData['name'] ||
         _brandController.text != _loadedBarcodeData['brand'] ||
         _packageController.text != _loadedBarcodeData['package_size'] ||
-        _newBarcodeCategory != _loadedBarcodeData['category'];
+        (_newBarcodeCategory != '') && (_newBarcodeCategory != _loadedBarcodeData['category']);
   }
 
   bool _isValidQuantity() {
@@ -365,13 +365,19 @@ class _ScanPageState extends State<ScanPage> {
     setState(() {
       _resetBarcodeData();
     });
-    String scannedBarcode = await BarcodeService().scanBarcode();
-    scannedBarcode = '44';
-    if (scannedBarcode != '-1' && scannedBarcode != 'Error scanning') {
-    setState(() {
-      _loadedBarcodeData['barcode'] = scannedBarcode;
-    });
+    //String scannedBarcode = await BarcodeService().scanBarcode();
+    String? scannedBarcode = await BarcodeService.scan(context);
+    //String scannedBarcode = '44';
+    if (scannedBarcode != null) {
+      setState(() {
+        _loadedBarcodeData['barcode'] = scannedBarcode;
+      });
       await _loadBarcodeData(scannedBarcode);
+    } else {
+      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to scan the barcode. Please try again.')),
+      );
     }
   }
 
@@ -379,7 +385,7 @@ class _ScanPageState extends State<ScanPage> {
     final loadedBarcode =
         await _supabaseService.fetchBarcodeData(scannedBarcode);
 
-    if (loadedBarcode != null && loadedBarcode.isNotEmpty) {
+    if (loadedBarcode.isNotEmpty) {
       _updateLoadedBarcodeData(loadedBarcode);
       await _loadItemStorageData();
     } else {

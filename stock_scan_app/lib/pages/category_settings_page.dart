@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/category.dart';
 import '../providers/category_provider.dart';
-import '../providers/auth_provider.dart';
 
 class CategorySettingsPage extends StatefulWidget {
   final List<Category> userCategories;

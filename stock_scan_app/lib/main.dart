@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:stock_scan_app/pages/auth_page.dart';
-import 'package:stock_scan_app/pages/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:stock_scan_app/providers/auth_provider.dart';
+import 'package:stock_scan_app/pages/auth_gate.dart';
 import 'package:stock_scan_app/providers/storage_provider.dart';
 import 'package:stock_scan_app/providers/category_provider.dart';
 
@@ -18,20 +16,17 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
   );
 
-  final session = Supabase.instance.client.auth.currentSession;
-  runApp(MyApp(isLoggedIn: session != null));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
 
-  MyApp({required this.isLoggedIn});
+  MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => StorageProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()), 
         // ...other providers if any...
@@ -39,7 +34,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Home Storage',
         theme: appUserTheme(),
-        home: isLoggedIn ? HomePage() : AuthPage(),
+        home: AuthGate(),
       ),
     );
   }

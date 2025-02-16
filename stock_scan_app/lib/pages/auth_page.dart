@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import 'home_page.dart';
+import 'package:stock_scan_app/services/supabase_service.dart';
 
 class AuthPage extends StatefulWidget {
+  const AuthPage({Key? key}) : super(key: key);
+
   @override
   _AuthPageState createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
+  final SupabaseService _supabaseService = SupabaseService();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> _signIn() async {
+  void _signIn() async {
     try {
-      await Provider.of<AuthProvider>(context, listen: false).signIn(
-        _emailController.text,
-        _passwordController.text,
-      );
-      Navigator.pushReplacement(
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      await _supabaseService.signIn(email, password);
+      /*Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      );*/
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),
@@ -29,12 +31,13 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  Future<void> _signUp() async {
+  void _signUp() async {
     try {
-      await Provider.of<AuthProvider>(context, listen: false).signUp(
-        _emailController.text,
-        _passwordController.text,
-      );
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      await _supabaseService.signUp(email, password);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Check your email to confirm signup!')),
       );

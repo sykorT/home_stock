@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stock_scan_app/pages/scan_page.dart';
-import '../providers/auth_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/storage_provider.dart';
 import '../providers/category_provider.dart';
-import 'auth_page.dart';
 import 'inventory_page.dart';
 import 'storage_settings_page.dart';
 import 'category_settings_page.dart';
 
 class HomePage extends StatefulWidget {
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  final user = Supabase.instance.client.auth.currentUser;
 
   @override
   void initState() {
@@ -24,9 +25,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _initializeData() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
-      final userId = user.id;
+      final userId = user!.id;
       final storageProvider = Provider.of<StorageProvider>(context, listen: false);
       final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
 
@@ -37,11 +37,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _signOut() async {
-    await Provider.of<AuthProvider>(context, listen: false).signOut();
-    Navigator.pushReplacement(
+    await Supabase.instance.client.auth.signOut();
+    //await Provider.of<AuthProvider>(context, listen: false).signOut();
+    /*Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => AuthPage()),
-    );
+    );*/
   }
 
   @override
@@ -106,7 +107,7 @@ class _HomePageState extends State<HomePage> {
                     sampleIcons: Provider.of<StorageProvider>(context, listen: false).homeStorageIcons,
                     onStoragesUpdated: (updatedStorages) {
                       Provider.of<StorageProvider>(context, listen: false).fetchStorages(
-                        Provider.of<AuthProvider>(context, listen: false).user!.id,
+                        user!.id,
                       );
                     },
                   ),
@@ -128,8 +129,9 @@ class _HomePageState extends State<HomePage> {
                     userCategories: Provider.of<CategoryProvider>(context, listen: false).userCategories,
                     onCategoriesUpdated: (updatedCategories) {
                       Provider.of<CategoryProvider>(context, listen: false).fetchUserCategories(
-                        Provider.of<AuthProvider>(context, listen: false).user!.id,
+                        user!.id,
                       );
+                      Provider.of<CategoryProvider>(context, listen: false).fetchAllCategories();
                     },
                   ),
                 ),

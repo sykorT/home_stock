@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/storage_provider.dart';
 import '../providers/category_provider.dart';
 import '../models/storage.dart';
@@ -30,7 +30,7 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   void _initializeData() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       final userId = user.id;
       final storageProvider = Provider.of<StorageProvider>(context, listen: false);
