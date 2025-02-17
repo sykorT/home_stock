@@ -105,11 +105,11 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
       appBar: AppBar(
         title: Text('Category Settings'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
+      body: Padding(
+        padding: const EdgeInsets.all(26.0),
+        child: Column(
+          children: [
+            TextField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Category name',
@@ -119,36 +119,36 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: categoryProvider.userCategories.length,
-              itemBuilder: (context, index) {
-                final category = categoryProvider.userCategories[index];
-                return ListTile(
-                  title: Text(category.name, style: Theme.of(context).textTheme.bodyMedium),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.drive_file_rename_outline),
-                        onPressed: () {
-                          _renameCategory(category, categoryProvider);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          _deleteCategory(category, categoryProvider);
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
+            Expanded(
+              child: ListView.builder(
+                itemCount: categoryProvider.userCategories.length,
+                itemBuilder: (context, index) {
+                  final category = categoryProvider.userCategories[index];
+                  return ListTile(
+                    title: Text(category.name, style: Theme.of(context).textTheme.bodyMedium),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.drive_file_rename_outline),
+                          onPressed: () {
+                            _renameCategory(category, categoryProvider);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            _deleteCategory(category, categoryProvider);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

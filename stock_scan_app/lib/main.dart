@@ -83,6 +83,8 @@ ThemeData appUserTheme() {
     listTileTheme: ListTileThemeData(
       textColor: Colors.teal[900],
       iconColor: Colors.teal[900],
+      selectedColor: Colors.teal[900],
+      selectedTileColor: Colors.teal[050],
       ),
       iconButtonTheme: IconButtonThemeData(
       style: ButtonStyle(

@@ -45,7 +45,6 @@ class _ScanPageState extends State<ScanPage> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final storages = context.watch<StorageProvider>().storages;
@@ -54,7 +53,7 @@ class _ScanPageState extends State<ScanPage> {
 
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.all(26.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -62,7 +61,6 @@ class _ScanPageState extends State<ScanPage> {
                 style: Theme.of(context).textTheme.bodyLarge),
             Text(_loadedBarcodeData['barcode'] ?? '',
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 18)),
-            SizedBox(height: 5),
             BarcodeNewNameBrand(
                 nameController: _nameController,
                 brandController: _brandController),
@@ -83,7 +81,13 @@ class _ScanPageState extends State<ScanPage> {
               label: Text('Start scanning',
                   style: TextStyle(color: Theme.of(context).primaryColor)),
             ),
-            SizedBox(height: 5),
+            Divider(
+              color: Colors.grey, // Line color
+              thickness: 1, // Line thickness
+              indent: 0, // Top padding
+              endIndent: 0, // Bottom padding
+              height: 30,
+            ),
             SizedBox(
               height: 130.0,
               child: Column(
@@ -103,7 +107,10 @@ class _ScanPageState extends State<ScanPage> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  storages.firstWhere((s) => s.id == item['storage_id']).name,
+                                  storages
+                                      .firstWhere(
+                                          (s) => s.id == item['storage_id'])
+                                      .name,
                                   style: Theme.of(context).textTheme.bodyMedium,
                                   textAlign: TextAlign.center,
                                 ),
@@ -142,7 +149,19 @@ class _ScanPageState extends State<ScanPage> {
                   width: 60,
                   child: TextField(
                     controller: _quantityController,
-                    decoration: InputDecoration(labelText: 'Quantity'),
+                    decoration: InputDecoration(
+                      //labelText: 'Quantity',
+                      border: InputBorder.none,
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            width: 0.0,
+                            color: const Color.fromARGB(255, 194, 228, 224)),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(width: 0.0, color: Colors.white),
+                      ),
+                    ),
+                    textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -172,6 +191,7 @@ class _ScanPageState extends State<ScanPage> {
                     storageProvider.setSelectedStorage(newValue);
                   },
                   hint: Text('Select storage'),
+                  underline: SizedBox(),
                 ),
               ],
             ),
@@ -212,7 +232,7 @@ class _ScanPageState extends State<ScanPage> {
     _brandController.text = '';
     _packageController.text = '';
     _newBarcodeCategory = false;
-    }
+  }
 
   bool _isBarcodeChanged() {
     return _nameController.text != _loadedBarcodeData['name'] ||
@@ -227,7 +247,8 @@ class _ScanPageState extends State<ScanPage> {
         !_quantityController.text.contains(RegExp(r'[^0-9]'));
   }
 
-  Future<void> _saveItem(String operation, StorageProvider storageProvider) async {
+  Future<void> _saveItem(
+      String operation, StorageProvider storageProvider) async {
     if (_loadedBarcodeData['barcode'] == 'No code scanned yet') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No barcode was scanned!')),
@@ -257,8 +278,11 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _updateUserBarcode() async {
-    final categories = Provider.of<CategoryProvider>(context, listen: false).allCategories;
-    final itemSelectedCategory = Provider.of<CategoryProvider>(context, listen: false).itemSelectedCategory;
+    final categories =
+        Provider.of<CategoryProvider>(context, listen: false).allCategories;
+    final itemSelectedCategory =
+        Provider.of<CategoryProvider>(context, listen: false)
+            .itemSelectedCategory;
 
     Map<String, dynamic> barcodeData = {
       'user_id': _supabaseService.supabase.auth.currentUser!.id,
@@ -267,9 +291,9 @@ class _ScanPageState extends State<ScanPage> {
       'name': _nameController.text,
       'brand': _brandController.text,
       'package_size': _packageController.text,
-      'category_id': _newBarcodeCategory ?  
-        categories.firstWhere((c) => c.name == itemSelectedCategory).id
-        : categories.firstWhere((c) => c.name == 'none').id,
+      'category_id': _newBarcodeCategory
+          ? categories.firstWhere((c) => c.name == itemSelectedCategory).id
+          : categories.firstWhere((c) => c.name == 'none').id,
     };
     await _supabaseService.updateUserBarcode(barcodeData);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -291,10 +315,12 @@ class _ScanPageState extends State<ScanPage> {
     return new_value;
   }
 
-  Future<void> _updateItemQuantity(String operation, StorageProvider storageProvider) async {
+  Future<void> _updateItemQuantity(
+      String operation, StorageProvider storageProvider) async {
     final storages = storageProvider.storages;
-    String selectedStorageId =
-        storages.firstWhere((s) => s.name == storageProvider.selectedStorage).id;
+    String selectedStorageId = storages
+        .firstWhere((s) => s.name == storageProvider.selectedStorage)
+        .id;
     var item = _storageItemsCount.firstWhere(
         (item) => item['storage_id'] == selectedStorageId,
         orElse: () => null);
@@ -317,7 +343,8 @@ class _ScanPageState extends State<ScanPage> {
       SnackBar(content: Text('Item was successfully saved.')),
     );
 
-    await storageProvider.fetchStorages(_supabaseService.supabase.auth.currentUser!.id);
+    await storageProvider
+        .fetchStorages(_supabaseService.supabase.auth.currentUser!.id);
   }
 
   Future<void> _removeItem(String selectedStorageId) async {
@@ -333,7 +360,7 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _upsertItem(
-    String selectedStorageId, dynamic item, int new_value) async {
+      String selectedStorageId, dynamic item, int new_value) async {
     final user = _supabaseService.supabase.auth.currentUser;
     Map<String, dynamic> itemData = {
       'user_id': user!.id,
@@ -372,7 +399,8 @@ class _ScanPageState extends State<ScanPage> {
     } else {
       // Handle error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to scan the barcode. Please try again.')),
+        SnackBar(
+            content: Text('Failed to scan the barcode. Please try again.')),
       );
     }
   }
@@ -394,7 +422,6 @@ class _ScanPageState extends State<ScanPage> {
       final newBarcode = await _supabaseService
           .addBarcodeToDatabase(_loadedBarcodeData['barcode']!);
       _updateLoadedBarcodeData(newBarcode);
-
     } catch (e) {
       print('Error inserting barcode: $e');
     }
@@ -405,9 +432,9 @@ class _ScanPageState extends State<ScanPage> {
         await _supabaseService.fetchItemStorageData(_loadedBarcodeData['id']!);
 
     if (storageItems.isNotEmpty) {
-    setState(() {
-      _storageItemsCount = storageItems;
-    });
+      setState(() {
+        _storageItemsCount = storageItems;
+      });
     }
   }
 
@@ -417,14 +444,17 @@ class _ScanPageState extends State<ScanPage> {
     _loadedBarcodeData['brand'] = loadedBarcode[0]['brand'];
     _loadedBarcodeData['package_size'] = loadedBarcode[0]['package_size'];
 
-    String loadedBarcodeCategory = Provider.of<CategoryProvider>(context, listen: false).allCategories.firstWhere((c) => c.id == loadedBarcode[0]['category_id']).name;
-    Provider.of<CategoryProvider>(context, listen: false).setLoadedCategory(loadedBarcodeCategory);
+    String loadedBarcodeCategory =
+        Provider.of<CategoryProvider>(context, listen: false)
+            .allCategories
+            .firstWhere((c) => c.id == loadedBarcode[0]['category_id'])
+            .name;
+    Provider.of<CategoryProvider>(context, listen: false)
+        .setLoadedCategory(loadedBarcodeCategory);
     _loadedBarcodeData['category'] = loadedBarcodeCategory;
-
 
     _nameController.text = _loadedBarcodeData['name']!;
     _brandController.text = _loadedBarcodeData['brand']!;
     _packageController.text = _loadedBarcodeData['package_size']!;
-    
   }
 }

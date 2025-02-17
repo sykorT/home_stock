@@ -139,11 +139,11 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
       appBar: AppBar(
         title: Text('Storage Settings'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
+      body: Padding(
+        padding: const EdgeInsets.all(26.0),
+        child: Column(
+          children: [
+            TextField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Storage name',
@@ -155,46 +155,46 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: storageProvider.storages.length,
-              itemBuilder: (context, index) {
-                final storage = storageProvider.storages[index];
-                return ListTile(
-                  leading: Icon(storageProvider.homeStorageIcons[storage.iconId] ?? Icons.storage),
-                  title: Text(
-                    storage.name,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          _selectIcon(storage, storageProvider);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.drive_file_rename_outline),
-                        onPressed: () {
-                          _renameStorage(storage, storageProvider);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          _deleteStorage(storage, storageProvider);
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
+            Expanded(
+              child: ListView.builder(
+                itemCount: storageProvider.storages.length,
+                itemBuilder: (context, index) {
+                  final storage = storageProvider.storages[index];
+                  return ListTile(
+                    leading: Icon(storageProvider.homeStorageIcons[storage.iconId] ?? Icons.storage),
+                    title: Text(
+                      storage.name,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            _selectIcon(storage, storageProvider);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.drive_file_rename_outline),
+                          onPressed: () {
+                            _renameStorage(storage, storageProvider);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            _deleteStorage(storage, storageProvider);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
