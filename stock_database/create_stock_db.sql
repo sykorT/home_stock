@@ -1,95 +1,221 @@
+drop table if exists public.profiles cascade;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 
--- This script creates a PostgreSQL database schema for a home stock management system.
 
--- Enable the 'unaccent' extension if it is not already enabled.
-CREATE EXTENSION IF NOT EXISTS unaccent;
+drop table if exists public.storages cascade;
+drop table if exists public.barcodes cascade;
+drop table if exists public.items cascade;
+drop table if exists public.categories cascade;
+drop table if exists public.user_categories cascade;
+drop table if exists public.user_barcodes cascade;
 
--- Create the 'users' table to store user information.
--- Fields:
--- - id: Primary key, auto-incremented.
--- - email: Unique email address of the user.
--- - password_hash: Hashed password of the user.
--- - created_at: Timestamp of when the user was created, defaults to the current time.
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+
+drop view public.user_storage_summary;
+
+
+
+create table public.profiles (
+  id uuid not null references auth.users on delete cascade,
+  email TEXT,
+
+  primary key (id)
+);
+alter table public.profiles enable row level security;
+
+
+
+
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name text not null,
+    UNIQUE(name) ,
+    created_at TIMESTAMP DEFAULT now()
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+) ;
+
+
+CREATE TABLE storages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    icon_id integer default 1,
+    UNIQUE(user_id, name) -- Uživatel nemůže mít 2 sklady se stejným jménem
 );
 
--- Create the 'stocks' table to store stock information.
--- Fields:
--- - id: Primary key, auto-incremented.
--- - name: Name of the stock.
--- - created_at: Timestamp of when the stock was created, defaults to the current time.
-CREATE TABLE stocks (
-    id SERIAL PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Create the 'barcodes' table to store barcode information.
--- Fields:
--- - id: Primary key, auto-incremented.
--- - barcode: Unique barcode of the product.
--- - product_name: Name of the product.
--- - category: Category of the product.
--- - created_at: Timestamp of when the barcode was created, defaults to the current time.
 CREATE TABLE barcodes (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     barcode TEXT UNIQUE NOT NULL,
-    product_name TEXT NOT NULL,
-    category TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
+    name TEXT default '', -- Např. "Polohrubá mouka"
+    brand TEXT default '', -- Např. "Penny", "Albert"
+    category_id UUID REFERENCES categories(id),
+    package_size TEXT default '',
+    created_at TIMESTAMP DEFAULT now()
 );
 
--- Create the 'items' table to store items in stock.
--- Fields:
--- - id: Primary key, auto-incremented.
--- - stock_id: Foreign key referencing the 'stocks' table, cascades on delete.
--- - barcode: Barcode referencing the 'barcodes' table, sets to NULL on delete.
--- - quantity: Quantity of the item, defaults to 1.
--- - expiration_date: Expiration date of the item.
--- - created_at: Timestamp of when the item was created, defaults to the current time.
+CREATE TABLE user_barcodes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    barcode TEXT UNIQUE NOT NULL,
+    name TEXT default '', -- Např. "Polohrubá mouka"
+    brand TEXT default '', -- Např. "Penny", "Albert"
+    category_id UUID REFERENCES categories(id),
+    package_size TEXT default '',
+    created_at TIMESTAMP DEFAULT now()
+);
+
 CREATE TABLE items (
-    id SERIAL PRIMARY KEY,
-    stock_id INT REFERENCES stocks(id) ON DELETE CASCADE,
-    barcode TEXT REFERENCES barcodes(barcode) ON DELETE SET NULL,
-    quantity INT NOT NULL DEFAULT 1,
-    expiration_date DATE,
-    created_at TIMESTAMP DEFAULT NOW()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    storage_id UUID REFERENCES storages(id) ON DELETE CASCADE,
+    barcode_id UUID REFERENCES barcodes(id),
+    quantity INT NOT NULL CHECK (quantity >= 0),
+    expiration_date DATE, -- Volitelné
+    created_at TIMESTAMP DEFAULT now()
 );
 
--- Create a function 'add_missing_barcode' to add a new barcode to the 'barcodes' table if it does not already exist.
--- This function is triggered before inserting a new item into the 'items' table.
-CREATE OR REPLACE FUNCTION add_missing_barcode()
-RETURNS TRIGGER AS $$
+ALTER TABLE storages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY user_can_access_own_storages
+ON storages FOR ALL
+USING (user_id = auth.uid());
+
+
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY user_can_access_own_items
+ON items FOR ALL
+USING (user_id = auth.uid());
+
+ALTER TABLE user_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY user_can_access_own_items
+ON user_categories FOR ALL
+USING (user_id = auth.uid());
+
+ALTER TABLE user_barcodes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY user_can_access_own_items
+ON user_barcodes FOR ALL
+USING (user_id = auth.uid());
+
+ALTER TABLE barcodes disaBLE ROW LEVEL SECURITY;
+CREATE POLICY user_can_access_all_items
+ON public.barcodes FOR ALL;
+USING (user_id = auth.uid());
+
+
+
+
+
+CREATE OR REPLACE VIEW public.storage_summary with
+(security_invoker = on) as
+SELECT
+    s.id AS storage_id,
+    s.user_id,  -- Adding user_id to the SELECT statement
+    SUM(i.quantity) AS total_quantity,
+    c.id AS item_category,  -- Assuming category is now from categories table
+    LOWER(TRIM(b.name)) AS normalized_item_name
+FROM
+    storages s
+JOIN
+    items i ON s.id = i.storage_id
+JOIN
+    barcodes b ON i.barcode_id = b.id
+JOIN
+    categories c ON b.category_id = c.id  -- Joining with categories table
+GROUP BY
+    s.id, s.user_id, c.id, LOWER(TRIM(b.name));
+
+CREATE OR REPLACE VIEW public.storage_summary WITH
+(security_invoker = on) AS
+SELECT
+    s.id AS storage_id,
+    s.user_id,  -- Adding user_id to the SELECT statement
+    SUM(i.quantity) AS total_quantity,
+    c.id AS item_category,  -- Assuming category is now from categories table
+    LOWER(TRIM(COALESCE(NULLIF(ub.name, ''), b.name))) AS normalized_item_name  -- Merged barcode name logic
+FROM
+    storages s
+JOIN
+    items i ON s.id = i.storage_id
+JOIN
+    barcodes b ON i.barcode_id = b.id
+LEFT JOIN
+    user_barcodes ub ON b.barcode = ub.barcode AND (ub.user_id = s.user_id OR s.user_id IS NULL)  -- Merging barcodes for user-specific data
+JOIN
+    categories c ON COALESCE(ub.category_id, b.category_id) = c.id  -- Use user barcode category if available
+GROUP BY
+    s.id, s.user_id, c.id, LOWER(TRIM(COALESCE(NULLIF(ub.name, ''), b.name)));  -- Normalizing the item name
+
+
+
+
+
+
+drop function get_item_storage_counts;
+CREATE OR REPLACE FUNCTION get_item_storage_counts(user_uuid UUID, barcode_selected UUID)
+RETURNS TABLE(item_id UUID, storage_id UUID, barcode_id UUID, item_count BIGINT) AS $$
 BEGIN
-    -- If the barcode is not NULL and does not exist in the 'barcodes' table, insert a new record.
-    IF NEW.barcode IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM barcodes WHERE barcode = NEW.barcode
-    ) THEN
-        INSERT INTO barcodes (barcode, product_name, category, created_at)
-        VALUES (NEW.barcode, NEW.name, NULL, NOW());
-    END IF;
-    RETURN NEW;
+    RETURN QUERY
+    SELECT 
+        i.id,
+        i.storage_id, 
+        i.barcode_id, 
+        SUM(i.quantity) AS item_count
+    FROM items i
+    JOIN barcodes b ON i.barcode_id = b.id
+    WHERE i.user_id = user_uuid AND i.barcode_id = barcode_selected
+    GROUP BY i.id, i.storage_id, i.barcode_id;
 END;
 $$ LANGUAGE plpgsql;
 
--- Create a trigger 'trigger_add_barcode' to execute the 'add_missing_barcode' function before inserting a new item into the 'items' table.
-CREATE TRIGGER trigger_add_barcode
-BEFORE INSERT ON items
-FOR EACH ROW
-EXECUTE FUNCTION add_missing_barcode();
 
--- Create a view 'aggregated_items' to aggregate item information.
--- The view normalizes product names by converting them to lowercase and removing accents.
--- It also calculates the total quantity and the nearest expiration date for each product.
-CREATE VIEW aggregated_items AS
-SELECT 
-    unaccent(LOWER(b.product_name)) AS normalized_name,
-    SUM(i.quantity) AS total_quantity,
-    MIN(i.expiration_date) AS nearest_expiration
-FROM items i
-JOIN barcodes b ON i.barcode = b.barcode
-GROUP BY normalized_name;
+DROP FUNCTION IF EXISTS get_all_barcodes;
+CREATE OR REPLACE FUNCTION get_all_barcodes(barcode_selected TEXT, user_uuid UUID DEFAULT NULL)
+RETURNS TABLE (
+    id UUID,
+    barcode TEXT,
+    name TEXT,
+    brand TEXT,
+    category_id UUID,
+    package_size TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        b.id,
+        b.barcode,
+        COALESCE(NULLIF(ub.name, ''), b.name) AS name,  -- Use user_barcodes name if not empty
+        COALESCE(NULLIF(ub.brand, ''), b.brand) AS brand,  -- Use user_barcodes brand if not empty
+        COALESCE(NULLIF(ub.category_id, NULL), b.category_id) AS category_id,  -- Use user_barcodes category_id if not null
+        COALESCE(NULLIF(ub.package_size, ''), b.package_size) AS package_size  -- Use user_barcodes package_size if not empty
+    FROM 
+        barcodes b
+    LEFT JOIN 
+        user_barcodes ub ON b.barcode = ub.barcode
+    WHERE
+        (ub.user_id = user_uuid OR user_uuid IS NULL)
+        AND b.barcode = barcode_selected;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+-- inserts a row into public.profiles
+create function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  insert into public.profiles (id, email)
+  values (new.id, new.raw_user_meta_data ->> 'email');
+  return new;
+end;
+$$;
+
+-- trigger the function every time a user is created
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+

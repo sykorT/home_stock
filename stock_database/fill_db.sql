@@ -1,39 +1,24 @@
--- Vložení uživatelů
-INSERT INTO users (email, password_hash) VALUES
-('user1@example.com', 'hashedpassword1'),
-('user2@example.com', 'hashedpassword2');
+-- Přidání uživatelů (simulujeme registraci přes Supabase Auth)
+INSERT INTO users (id, email) VALUES
+('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
+('22222222-2222-2222-2222-222222222222', 'bob@example.com');
 
--- Vložení skladů (stocks)
-INSERT INTO stocks (name) VALUES
-('Lednička'),
-('Mrazák'),
-('Spíž');
+-- Přidání skladů (každý uživatel si může vytvořit vlastní sklady)
+INSERT INTO storages (id, user_id, name) VALUES
+('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Lednička'),
+('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Mrazák'),
+('bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222', 'Spíž');
 
--- Vložení čárových kódů (barcodes)
-INSERT INTO barcodes (barcode, product_name, category) VALUES
-('1234567890123', 'Mouka polohrubá', 'Mouka'),
-('2345678901234', 'Mouka hladká', 'Mouka'),
-('3456789012345', 'Mléko 1L', 'Mléčné výrobky'),
-('4567890123456', 'Margarín', 'Margaríny'),
-('5678901234567', 'Káva zrnková', 'Káva'),
-('6789012345678', 'Rajčata konzervovaná', 'Zelenina'),
-('7890123456789', 'Těstoviny', 'Pasta');
+-- Přidání čárových kódů a produktů
+INSERT INTO barcodes (id, barcode, name, brand, category) VALUES
+('ccccccc1-cccc-cccc-cccc-cccccccccccc', '8594003620010', 'Mléko 1,5%', 'Madeta', 'Mléčné výrobky'),
+('ccccccc2-cccc-cccc-cccc-cccccccccccc', '8594003620027', 'Máslo 250g', 'Madeta', 'Mléčné výrobky'),
+('ccccccc3-cccc-cccc-cccc-cccccccccccc', '8000500310427', 'Špagety 500g', 'Barilla', 'Těstoviny'),
+('ccccccc4-cccc-cccc-cccc-cccccccccccc', '8594003620034', 'Rohlík', 'Pekařství U Krále', 'Pečivo');
 
--- Vložení položek do skladů (items)
-INSERT INTO items (stock_id, barcode, quantity, expiration_date) VALUES
-(1, '1234567890123', 5, '2025-06-30'),
-(1, '2345678901234', 3, '2025-06-30'),
-(2, '3456789012345', 10, '2025-02-28'),
-(1, '4567890123456', 2, '2025-04-15'),
-(3, '5678901234567', 1, '2025-08-01'),
-(3, '6789012345678', 8, '2026-01-01'),
-(2, '7890123456789', 6, '2025-12-15');
-
--- Další vzorová data pro testování
-INSERT INTO items (stock_id, barcode, quantity, expiration_date) VALUES
-(2, '2345678901234', 4, '2025-06-30'),
-(1, '3456789012345', 6, '2025-02-28'),
-(3, '4567890123456', 1, '2025-04-15'),
-(2, '5678901234567', 3, '2025-08-01'),
-(3, '6789012345678', 12, '2026-01-01'),
-(1, '7890123456789', 15, '2025-12-15');
+-- Přidání položek do skladů uživatelů
+INSERT INTO items (id, user_id, storage_id, barcode_id, quantity, expiration_date) VALUES
+('ddddddd1-dddd-dddd-dddd-dddddddddddd', '11111111-1111-1111-1111-111111111111', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ccccccc1-cccc-cccc-cccc-cccccccccccc', 2, '2025-03-15'),
+('ddddddd2-dddd-dddd-dddd-dddddddddddd', '11111111-1111-1111-1111-111111111111', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ccccccc2-cccc-cccc-cccc-cccccccccccc', 1, '2025-05-10'),
+('ddddddd3-dddd-dddd-dddd-dddddddddddd', '11111111-1111-1111-1111-111111111111', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'ccccccc3-cccc-cccc-cccc-cccccccccccc', 3, NULL),
+('ddddddd4-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'ccccccc4-cccc-cccc-cccc-cccccccccccc', 10, '2025-02-20');
