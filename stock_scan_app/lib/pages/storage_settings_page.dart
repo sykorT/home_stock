@@ -20,7 +20,6 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
   }
 
   // Function to add a new storage
-  
   void _addStorage(StorageProvider storageProvider) async {
     if (_nameController.text.isNotEmpty) {
       try {
@@ -155,6 +154,7 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
                 ),
               ),
             ),
+            // List of storages
             Expanded(
               child: ListView.builder(
                 itemCount: storageProvider.storages.length,

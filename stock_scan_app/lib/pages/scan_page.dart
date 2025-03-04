@@ -74,6 +74,8 @@ class _ScanPageState extends State<ScanPage> {
               },
             ),
             SizedBox(height: 5),
+            
+            // Scan button
             ElevatedButton.icon(
               onPressed: () => _scanBarcode(),
               icon:
@@ -82,12 +84,13 @@ class _ScanPageState extends State<ScanPage> {
                   style: TextStyle(color: Theme.of(context).primaryColor)),
             ),
             Divider(
-              color: Colors.grey, // Line color
-              thickness: 1, // Line thickness
-              indent: 0, // Top padding
-              endIndent: 0, // Bottom padding
+              color: Colors.grey,
+              thickness: 1, 
+              indent: 0, 
+              endIndent: 0,
               height: 30,
             ),
+            // Item count in storages
             SizedBox(
               height: 130.0,
               child: Column(
@@ -132,6 +135,7 @@ class _ScanPageState extends State<ScanPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                // Quantity buttons
                 IconButton(
                   icon: Icon(Icons.remove),
                   onPressed: () {
@@ -145,6 +149,8 @@ class _ScanPageState extends State<ScanPage> {
                     });
                   },
                 ),
+
+                // Quantity input field
                 SizedBox(
                   width: 60,
                   child: TextField(
@@ -166,6 +172,8 @@ class _ScanPageState extends State<ScanPage> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
+
+                // Quantity buttons
                 IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
@@ -178,6 +186,7 @@ class _ScanPageState extends State<ScanPage> {
                   },
                 ),
                 SizedBox(width: 10),
+                // Storage dropdown
                 DropdownButton<String>(
                   value: storageProvider.selectedStorage,
                   items: storages.map((Storage storage) {
@@ -196,6 +205,8 @@ class _ScanPageState extends State<ScanPage> {
               ],
             ),
             SizedBox(height: 30),
+
+            // Add/Remove buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [

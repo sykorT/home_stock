@@ -38,7 +38,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
     return Column(
       children: [
-        // První řádek se vstupním polem a dropdownem
+        // First row with search input field and dropdown for categories
         Row(
           children: [
             Expanded(
@@ -72,10 +72,10 @@ class _InventoryPageState extends State<InventoryPage> {
               height: 64,
               width: 15,
               child: VerticalDivider(
-                color: Colors.grey, // Line color
-                thickness: 1, // Line thickness
-                indent: 2, // Top padding
-                endIndent: 2, // Bottom padding
+                color: Colors.grey,
+                thickness: 1,
+                indent: 2, 
+                endIndent: 2,
               ),
             ),
             Expanded(
@@ -107,25 +107,25 @@ class _InventoryPageState extends State<InventoryPage> {
           ],
         ),
         Divider(
-          color: Colors.grey, // Line color
-          height: 2, // Spacing around the divider
-          thickness: 1, // Line thickness
-          indent: 2, // Top padding
-          endIndent: 2, // Bottom padding
+          color: Colors.grey, 
+          height: 2,
+          thickness: 1,
+          indent: 2,
+          endIndent: 2,
         ),
 
-        // Druhý řádek s tlačítkem a seznamem
-
+        // Second row with storage list and inventory items
         Expanded(
           child: Row(
             children: [
+              // Storage list
               Padding(
                 padding: const EdgeInsets.only(left: 5),
                 child: SizedBox(
                   width: showNames ? 160 : 65,
                   child: Column(
                     crossAxisAlignment:
-                        CrossAxisAlignment.start, // Aligns children to the left
+                        CrossAxisAlignment.start,
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(4.0, 4, 0, 4),
@@ -152,10 +152,10 @@ class _InventoryPageState extends State<InventoryPage> {
                                 shape: Border(
                                   top: BorderSide(
                                       color: Colors.grey,
-                                      width: 0.5), // Top border
+                                      width: 0.5), 
                                   bottom: BorderSide(
                                       color: Colors.grey,
-                                      width: 0.5), // Bottom border
+                                      width: 0.5), 
                                 ),
                                 title: showNames
                                     ? Text('All',
@@ -175,8 +175,8 @@ class _InventoryPageState extends State<InventoryPage> {
                                 selected: selectedStorage == storage, 
                                 leading: Icon(storageIcons[storage.iconId]),
                                 shape: Border(
-                                  top: BorderSide(color: Colors.grey, width: 0.5), // Top border
-                                  bottom: BorderSide(color: Colors.grey, width: 0.5), // Bottom border
+                                  top: BorderSide(color: Colors.grey, width: 0.5), 
+                                  bottom: BorderSide(color: Colors.grey, width: 0.5), 
                                 ),
                                 title: showNames
                                     ? Text(storage.name,
@@ -189,7 +189,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                     selectedStorage = storage;
                                   });
                                 },
-                                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16), // Adjust padding here
+                                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16), 
                   
                               );
                             }
@@ -201,14 +201,15 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
 
-              // Další ListView (hlavní seznam položek)
+              
               VerticalDivider(
-                color: Colors.grey, // Line color
-                width: 2, // Spacing around the divider
-                thickness: 1, // Line thickness
-                indent: 2, // Top padding
-                endIndent: 2, // Bottom padding
+                color: Colors.grey, 
+                width: 2, 
+                thickness: 1, 
+                indent: 2, 
+                endIndent: 2,
               ),
+              // Inventory items
               Expanded(
                 //flex: showNames ? 3 : 5,
                 child: Padding(
@@ -271,55 +272,6 @@ class _InventoryPageState extends State<InventoryPage> {
     final sortedCategories =
         categories.map((category) => category.name).toList()..sort();
     return sortedCategories;
-  }
-
-  List<InventoryItem> _getFilteredItems66(
-      List<Storage> storages, List<Category> categories) {
-    final items = <InventoryItem>[];
-    final Map<String, int> itemQuantityMap = {};
-
-    String categoryId = '0';
-    if (selectedCategory != 'All') {
-      try {
-        categoryId =
-            categories.firstWhere((s) => s.name == selectedCategory).id;
-      } catch (e) {
-        selectedCategory = 'All';
-      }
-    }
-
-    if (selectedStorage == null) {
-      for (var storage in storages) {
-        for (var item in storage.items) {
-          if (selectedCategory == 'All' || item.category == categoryId) {
-            itemQuantityMap[item.productName] =
-                (itemQuantityMap[item.productName] ?? 0) + item.quantity;
-          }
-        }
-      }
-    } else {
-      for (var item in selectedStorage!.items) {
-        if (selectedCategory == 'All' || item.category == categoryId) {
-          itemQuantityMap[item.productName] =
-              (itemQuantityMap[item.productName] ?? 0) + item.quantity;
-        }
-      }
-    }
-
-    itemQuantityMap.forEach((productName, quantity) {
-      final category = storages
-          .expand((storage) => storage.items)
-          .firstWhere((item) => item.productName == productName)
-          .category;
-      items.add(InventoryItem(
-        productName: productName,
-        quantity: quantity,
-        category: category,
-        storageID: "0",
-      ));
-    });
-
-    return items;
   }
 
   List<InventoryItem> _getFilteredItems(
