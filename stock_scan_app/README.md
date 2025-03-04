@@ -1,6 +1,7 @@
 # stock_scan_app
 
-A new Flutter project.
+An app for scanning barcodes and managing items in storages at home.
+Connects to supabase db.
 
 ## Getting Started
 
